@@ -1,7 +1,11 @@
-from flask import Flask, jsonify, request
+from flask import Flask, request
+from flask_restful import Resource, Api
 import json
+from habilidades import Habilidades
+
 
 app = Flask(__name__)
+api = Api(app)
 
 desenvolvedores = [{
                     'id':'0',
@@ -14,38 +18,40 @@ desenvolvedores = [{
                     'habilidades':['HTML','Java']
                    }]
 
-@app.route('/dev/<int:id>/', methods=['GET', 'PUT', 'DELETE'])
-def desenvolvedor(id):
-    if request.method == 'GET':
+class Desenvolvedor(Resource):
+    def get(self, id):
         try:
             response = desenvolvedores[id]
         except IndexError:
             response = {'status': 'erro', 'mensagem': 'Desenvolvedor e ID {} não existe'.format(id)}
         except Exception:
             mensagem = 'Erro Desconhecido'
-            response = {'status':'erro', 'mensagem':mensagem}
-        return jsonify(response)
-    elif request.method == 'PUT':
+            response = {'status': 'erro', 'mensagem': mensagem}
+        return (response)
+
+    def put(self, id):
         dados = json.loads(request.data)
         desenvolvedores[id] = dados
-        return jsonify(dados)
-    elif request.method == 'DELETE':
-        desenvolvedores.pop(id)
-        return jsonify({'status':'sucesso', 'mensagem':'Registro excluído'})
+        return (dados)
 
-#lista todos os desenvolvedores e inclui um novo desenvolvedor
-@app.route('/dev/', methods=['POST', 'GET'])
-def lista_desenvolvedores():
-    if request.method == 'POST':
+    def delete(self, id):
+        desenvolvedores.pop(id)
+        return ({'status': 'sucesso', 'mensagem': 'Registro excluído'})
+
+class ListaDesenvolvedores(Resource):
+    def get(self):
+        return desenvolvedores
+
+    def post(self):
         dados = json.loads(request.data)
         posicao = len(desenvolvedores)
         dados['id'] = posicao
         desenvolvedores.append(dados)
-        return jsonify(desenvolvedores[posicao])
-    elif request.method == 'GET':
-        return jsonify(desenvolvedores)
+        return (desenvolvedores[posicao])
 
-
+api.add_resource(Desenvolvedor, '/dev/<int:id>/')
+api.add_resource(ListaDesenvolvedores, '/dev')
+api.add_resource(Habilidades, '/habilidades/')
 
 if __name__ == '__main__':
     app.run(debug=True)
